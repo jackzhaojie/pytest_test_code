@@ -1,0 +1,66 @@
+F test_tmp.py::TestCase::test_eq_set
+ self = <test_tmp.TestCase object at 0x7f597aa514e0>
+ 
+     def test_eq_set(self):
+ >       assert set([0,10,11,12]) == set([0,20,21])
+ E       assert {0, 10, 11, 12} == {0, 20, 21}
+ E         Extra items in the left set:
+ E         10
+ E         11
+ E         12
+ E         Extra items in the right set:
+ E         20
+ E         21
+ E         Full diff:
+ E         - {0, 10, 11, 12}
+ E         + {0, 20, 21}
+ 
+ test_tmp.py:51: AssertionError
+F test_tmp.py::TestCase::test_eq_dict
+ self = <test_tmp.TestCase object at 0x7f597aa51e48>
+ 
+     def test_eq_dict(self):
+ >       assert {"a":0, "b":1, "c":0} == {"a":0, "b":2, "d":0}
+ E       AssertionError: assert {'a': 0, 'b': 1, 'c': 0} == {'a': 0, 'b': 2, 'd': 0}
+ E         Common items:
+ E         {'a': 0}
+ E         Differing items:
+ E         {'b': 1} != {'b': 2}
+ E         Left contains 1 more item:
+ E         {'c': 0}
+ E         Right contains 1 more item:
+ E         {'d': 0}
+ E         Full diff:
+ E         - {'a': 0, 'b': 1, 'c': 0}
+ E         ?               ^   ^
+ E         + {'a': 0, 'b': 2, 'd': 0}
+ E         ?               ^   ^
+ 
+ test_tmp.py:54: AssertionError
+F test_tmp.py::TestCase::test_eq_list
+ self = <test_tmp.TestCase object at 0x7f597aa3c8d0>
+ 
+     def test_eq_list(self):
+ >       assert [0,1,2] == [0,1,3]
+ E       assert [0, 1, 2] == [0, 1, 3]
+ E         At index 2 diff: 2 != 3
+ E         Full diff:
+ E         - [0, 1, 2]
+ E         ?        ^
+ E         + [0, 1, 3]
+ E         ?        ^
+ 
+ test_tmp.py:57: AssertionError
+F test_tmp.py::TestCase::test_eq_longer_list
+ self = <test_tmp.TestCase object at 0x7f597a9f8080>
+ 
+     def test_eq_longer_list(self):
+ >       assert [1,2] == [1,2,3]
+ E       assert [1, 2] == [1, 2, 3]
+ E         Right contains one more item: 3
+ E         Full diff:
+ E         - [1, 2]
+ E         + [1, 2, 3]
+ E         ?      +++
+ 
+ test_tmp.py:60: AssertionError
