@@ -150,5 +150,17 @@ def test_transcode(index, value, source, outres):
             break
         # exit(-1)
     print("**********")
-    task_clear = exec_cmdline(node_ip, 'killall -9 ffmpeg')
+    # task_clear = exec_cmdline(node_ip, 'killall -9 ffmpeg')
+
+    task_clear = exec_cmdline(node_ip, 'killall -15 ffmpeg')
+    # while True:
+    time.sleep(5)
+    task_clear = exec_cmdline(node_ip, 'ps aux | grep ffmpeg | grep -v grep | wc -l')
+    if int(task_clear[0]) > 0:
+        task_clear = exec_cmdline(node_ip, 'killall -2 ffmpeg')
+        time.sleep(5)
+        task_clear = exec_cmdline(node_ip, 'ps aux | grep ffmpeg | grep -v grep | wc -l')
+        if int(task_clear[0]) > 0:
+            task_clear = exec_cmdline(node_ip, 'killall -9 ffmpeg')
+            print("warning: task killall -9")
     time.sleep(10)
