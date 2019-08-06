@@ -57,7 +57,14 @@ class test_node_transcode():
 
     # @pytest.mark.parametrize("index, value", stuple_list)
     def test_transcode(self, index, value, source_video, source_res, bitrate):
-        basic_cmd = "cd /tmp;ffmpeg -y -c:v v205h264 -i /tmp/{}  -c:v v205h264 -an -preset veryfast -bf 3  -vsync 0 -rc-lookahead 40 -b:v {} -r 30 -g 90 -ratetol 1 -s {} /tmp/output1.mp4".format(source_video, bitrate,source_res)
+        # build 8
+        # basic_cmd = "cd /tmp;ffmpeg -y -c:v v205h264 -i /tmp/{}  -c:v v205h264 -an -preset veryfast -bf 3  -vsync 0 -rc-lookahead 40 -b:v {} -r 30 -g 90 -ratetol 1 -s {} /tmp/output1.mp4".format(source_video, bitrate,source_res)
+
+        # build 4 
+        source_res_w = source_res.split('x')[0]
+        source_res_h = source_res.split('x')[1]
+        basic_cmd = "cd /tmp;ffmpeg -y -c:v v205h264 -i /tmp/{}  -c:v v205h264 -an -preset veryfast -bf 3  -vsync 0 -rc-lookahead 40 -b:v {} -r 30 -g 90 -ratetol 1 -outw {} -outh {} /tmp/output1.mp4".format(source_video, bitrate,source_res_w, source_res_h)
+
         value_dicts = self.option_mark(value)
         basic_cmd_list = [i for i in basic_cmd.split(' ') if i != ' ']
         for dict_key, dict_value in value_dicts.items():
@@ -68,7 +75,7 @@ class test_node_transcode():
                     basic_cmd_list[list_index+1] = dict_value
         transcode_cmd = ' '.join(basic_cmd_list)
         print('')
-        for task_num in range(1,34):
+        for task_num in range(1,36):
             cmd_use = transcode_cmd[0:transcode_cmd.rindex(' ')] + ' /tmp/out{}.mp4 2>&1 | tee thread{}.log &'.format(str(task_num), str(task_num))
             transcode = self.exec_cmdline(self.node_ip, cmd_use)
             if source_res == '480x360' or source_res == '640x480':

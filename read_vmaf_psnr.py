@@ -1,9 +1,12 @@
+# python read_vmaf_psnr.py vmaf/psnr
+
 import csv 
 import os
 import xlsxwriter
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import sys
 
 def read_csv(csv_name):
     with open(csv_name, 'r') as csv_file:
@@ -35,10 +38,22 @@ def dict_get(dict1, objkey, default):
                     return ret
     return default
 
+
+write_flag = sys.argv[1]
 bitrate_csv = video_path("bitrate.csv")
 bitrate_data = [c for i in bitrate_csv for c in read_csv(i)]
-psnr_data = read_csv('all_y_psnr.csv')
 
+if write_flag == 'psnr':
+    read_csv_name = 'all_y_psnr.csv'
+    write_info_name = 'PSNR'
+    data_xlsx = 'all_psnr_data.xlsx'
+elif write_flag == 'vmaf':
+    read_csv_name = 'all_vmaf.csv'
+    write_info_name = 'VMAF'
+    data_xlsx = 'all_vmaf_data.xlsx'
+
+
+psnr_data = read_csv(read_csv_name)
 info = []
 for psnr in psnr_data:
     psnr_info_list = psnr.split(',')
@@ -52,7 +67,6 @@ for psnr in psnr_data:
             psnr_info_list.append(bitrate_value)
             info.append(psnr_info_list)
 # print(info)
-
 for i in info:
     print(i)
 list1 = []
@@ -94,15 +108,15 @@ for i in list2:
     for keys, values in i.items() :
         i[keys] = list4
 
-# print(list2)
-
-
-work_name = 'tmp.xlsx'
+print(list2)
+work_name = data_xlsx
 if os.path.exists(work_name):
     os.remove(work_name)
 workbook = xlsxwriter.Workbook(work_name)
 worksheet = workbook.add_worksheet()
-for write_index, write_info in enumerate(list2[:5]) :
+
+
+for write_index, write_info in enumerate(list2) :
     # 视频字典分割    
     print(write_index)
     headings = ['Video', ' ' ]
@@ -112,8 +126,6 @@ for write_index, write_info in enumerate(list2[:5]) :
         write_row2 = []
         # print(value)
         write_len = len(value)
-        # print(value)
-        # print("write_len {}".format(write_len))
         target_bitrate_info_flag = 1
         for index, value in enumerate(value):
             for key2,value2 in value.items():
@@ -129,7 +141,7 @@ for write_index, write_info in enumerate(list2[:5]) :
                         headings.append(vcodec)
                         headings.append(" ")
                         write_row1.append('real bitrate')
-                        write_row1.append('PSNR')
+                        write_row1.append(write_info_name)
                         vcodec_flag = 0
                     write_row2.append(target_bitrate_info)
                     write_row2.append(x_bitrate_info)
@@ -147,7 +159,7 @@ for write_index, write_info in enumerate(list2[:5]) :
     locate_path = 1 + write_index * (7 + bitrate_num) 
     worksheet.write_row('A{}'.format(str(locate_path)), headings)       
     worksheet.write_row('A{}'.format(str(locate_path + 1)), write_row1)
-    sorted_pp = sorted(pp, key=lambda my_sort: my_sort[0])
+    sorted_pp = sorted(pp, key=lambda my_sort: int(my_sort[0].split('k')[0]))
     for i, value in enumerate(sorted_pp) :
         info2 = [' '] + value
         index = locate_path + 2 + int(i)
@@ -176,7 +188,7 @@ for write_index, write_info in enumerate(list2[:5]) :
 
     png_name = "tmp{}.png".format(write_index)
     plt.xlabel('bitrate/kbps')
-    plt.ylabel('psnr')
+    plt.ylabel(write_info_name)
     plt.title(video.split('.')[0])
     plt.legend(bbox_to_anchor=(1, 1), loc=2, borderaxespad=0)
     plt.savefig(png_name,dpi=200,bbox_inches='tight')

@@ -10,9 +10,9 @@ import paramiko
 xx = test_node_performance()
 performance_stuple_list = []
 presets = ['veryfast', 'fast', 'medium']
-videos = ['004-bbb-1080p-h264_5000frames.mp4', '004-bbb-720p-h264_5000frames.mp4']
+videos = ['004-bbb-1080p-h264_10000frames.mp4', '004-bbb-720p-h264_10000frames.mp4']
 for video in videos:
-  if video == '004-bbb-1080p-h264_5000frames.mp4':
+  if video == '004-bbb-1080p-h264_10000frames.mp4':
     for preset in presets:
       if preset == 'veryfast':
         [performance_stuple_list.append((index,preset,video,'1920x1080',"3000k")) for index in range(1,9)]
@@ -20,7 +20,7 @@ for video in videos:
         [performance_stuple_list.append((index,preset,video,'1920x1080',"3000k")) for index in range(1,5)]
       elif preset == 'fast':
         [performance_stuple_list.append((index,preset,video,'1920x1080',"3000k")) for index in range(1,5)]
-  elif video == '004-bbb-720p-h264_5000frames.mp4':
+  elif video == '004-bbb-720p-h264_10000frames.mp4':
     for preset in presets:
       if preset == 'veryfast':
         [performance_stuple_list.append((index,preset,video,'1280x720',"2000k")) for index in range(1,17)]
@@ -93,20 +93,20 @@ def option_cmdline(optx, leng, options, cmdline, cmdline_list):
 
 m = dict_recursive(info_conf)
 transcode_stuple_list = []
-videos = ["004-bbb-1080p-h264_5000frames.mp4","004-bbb-720p-h264_5000frames.mp4","004-bbb-540p-h264_5000frames.mp4","004-bbb-480p-h264_5000frames.mp4","004-bbb-360p-h264_5000frames.mp4", "004-bbb-1080p-h264_5000frames.mp4:720p"]
+videos = ["004-bbb-1080p-h264_10000frames.mp4","004-bbb-720p-h264_10000frames.mp4","004-bbb-540p-h264_10000frames.mp4","004-bbb-480p-h264_10000frames.mp4","004-bbb-360p-h264_10000frames.mp4", "004-bbb-1080p-h264_10000frames.mp4:720p"]
 for video in videos:
-    if video == '004-bbb-1080p-h264_5000frames.mp4':
+    if video == '004-bbb-1080p-h264_10000frames.mp4':
         [transcode_stuple_list.append((index[0],index[1],video,'1920x1080',"3000k")) for index in m]
-    elif video ==  "004-bbb-1080p-h264_5000frames.mp4:720p":
+    elif video ==  "004-bbb-1080p-h264_10000frames.mp4:720p":
         video = video.split(':')[0]
         [transcode_stuple_list.append((index[0],index[1],video,'1280x720',"3000k")) for index in m]
-    elif video == '004-bbb-720p-h264_5000frames.mp4':
+    elif video == '004-bbb-720p-h264_10000frames.mp4':
         [transcode_stuple_list.append((index[0],index[1],video,'1280x720',"2000k")) for index in m]
-    elif video == '004-bbb-540p-h264_5000frames.mp4':
+    elif video == '004-bbb-540p-h264_10000frames.mp4':
         [transcode_stuple_list.append((index[0],index[1],video,'960x540',"1600k")) for index in m]
-    elif video == '004-bbb-480p-h264_5000frames.mp4':
+    elif video == '004-bbb-480p-h264_10000frames.mp4':
         [transcode_stuple_list.append((index[0],index[1],video,'640x480',"1100k")) for index in m]
-    elif video == '004-bbb-360p-h264_5000frames.mp4':
+    elif video == '004-bbb-360p-h264_10000frames.mp4':
         [transcode_stuple_list.append((index[0],index[1],video,'480x360',"800k")) for index in m]
 
 # for i in transcode_stuple_list:
@@ -114,11 +114,6 @@ for video in videos:
 # exit(-1)
 
 # live class
-
-
-
-
-
 # # test2
 
 class TestClass(object):

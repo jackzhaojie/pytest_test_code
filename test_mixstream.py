@@ -94,9 +94,12 @@ def option_cmdline(optx, leng, options, cmdline, cmdline_list):
     optx -= 1
     return 0
 
+rtmp_server = "172.16.15.32"
+rtsp_server = "172.16.15.32"
+
 # exec push stream
-rtmp_input_stream = 'rtmp://172.16.15.32:1935/live/rtmp_live'
-rtsp_input_stream = 'rtsp://172.16.15.32:554/rtsp_live'
+rtmp_input_stream = 'rtmp://{}:1935/live/rtmp_live'.format(rtmp_server)
+rtsp_input_stream = 'rtsp://{}:554/rtsp_live'.format(rtsp_server)
 ffmpeg_get = run("ps aux | grep ffmpeg | wc -l")
 if int(ffmpeg_get) > 2:
     pass
@@ -108,12 +111,10 @@ else:
             rtsp_input_streams = rtsp_input_stream + '_1080'
             push_rtmp_stream_cmd = "nohup ffmpeg -threads 2 -re -fflags +genpts -stream_loop -1 -i {} -c copy -f flv {} >/dev/null 2>/dev/null &".format(push_stream_mp4 ,rtmp_input_streams)
             push_rtsp_stream_cmd = "nohup ffmpeg -threads 2 -re -fflags +genpts -stream_loop -1 -i {} -c copy -f rtsp {} >/dev/null 2>/dev/null &".format(push_stream_mp4 ,rtsp_input_streams)
-
             # print(push_rtmp_stream_cmd)
             # print(push_rtsp_stream_cmd)
             run_cmd = run(push_rtmp_stream_cmd)
             run_cmd = run(push_rtsp_stream_cmd)
-
         elif push_stream_mp4 == '004-bbb-720p-h264_5000frames.mp4':
             rtmp_input_streams = rtmp_input_stream + '_720'
             rtsp_input_streams = rtsp_input_stream + '_720'
@@ -127,20 +128,20 @@ else:
 
 # exit(-1)
 info_conf = {            
-            "-o":"rtmp://172.16.15.32:1935/live/rtmp_live_1080_test,rtmp://172.16.15.32:1935/live/rtmp_live_720_test,rtsp://172.16.15.32:554/rtsp_live_1080_test,rtsp://172.16.15.32:554/rtsp_live_720_test",
+            "-o":"rtmp://{}:1935/live/rtmp_live_1080_test,rtmp://{}:1935/live/rtmp_live_720_test,rtsp://{}:554/rtsp_live_1080_test,rtsp://{}:554/rtsp_live_720_test".format(rtmp_server,rtmp_server,rtsp_server,rtsp_server),
             "-preset":"medium, veryfast",
             }
 
-source_videos = ['rtmp://172.16.15.32:1935/live/rtmp_live_1080', 'rtsp://172.16.15.32:554/rtsp_live_1080','rtmp://172.16.15.32:1935/live/rtmp_live_720', 'rtsp://172.16.15.32:554/rtsp_live_720']
+source_videos = ['rtmp://{}:1935/live/rtmp_live_1080'.format(rtmp_server), 'rtsp://{}:554/rtsp_live_1080'.format(rtsp_server),'rtmp://{}:1935/live/rtmp_live_720'.format(rtmp_server), 'rtsp://{}:554/rtsp_live_720'.format(rtsp_server)]
 mixstream_stuple_list = []
 cc = dict_recursive(info_conf)
 for source_video in source_videos:    
-    if source_video == 'rtmp://172.16.15.32:1935/live/rtmp_live_1080' or source_video == 'rtsp://172.16.15.32:554/rtsp_live_1080':
+    if source_video == 'rtmp://{}:1935/live/rtmp_live_1080'.format(rtmp_server) or source_video == 'rtsp://{}:554/rtsp_live_1080'.format(rtsp_server):
         [mixstream_stuple_list.append((8,index[1],source_video,'1280x720',"2000k")) if index[1].find('720') != -1 and index[1].find('veryfast') != -1 \
         else mixstream_stuple_list.append((8,index[1],source_video,'1920x1080',"3000k")) if index[1].find('720') == -1 and index[1].find('veryfast')!= -1 \
         else mixstream_stuple_list.append((6,index[1],source_video,'1280x720',"2000k"))  if index[1].find('720') != -1 and index[1].find('medium')!= -1 \
         else mixstream_stuple_list.append((3,index[1],source_video,'1920x1080',"3000k")) if index[1].find('720') == -1 and index[1].find('medium')!= -1 else None for index in cc]
-    elif source_video == 'rtmp://172.16.15.32:1935/live/rtmp_live_720' or source_video == 'rtsp://172.16.15.32:554/rtsp_live_720':
+    elif source_video == 'rtmp://{}:1935/live/rtmp_live_720'.format(rtmp_server) or source_video == 'rtsp://{}:554/rtsp_live_720'.format(rtsp_server):
         [mixstream_stuple_list.append((17,index[1],source_video,'1280x720',"2000k")) if index[1].find('720') != -1 and index[1].find("veryfast")!= -1 \
         else mixstream_stuple_list.append((8,index[1],source_video,'1280x720',"2000k")) if index[1].find('720') != -1 and index[1].find("medium")!= -1 else None for index in cc ]
 
@@ -152,10 +153,9 @@ def option_mark(options):
             dict_mark_info[value] = dict_mark[index+1]
     return dict_mark_info
 
-for i in mixstream_stuple_list:
-    print(i)
-print(len(mixstream_stuple_list))
-
+# for i in mixstream_stuple_list:
+#     print(i)
+# print(len(mixstream_stuple_list))
 
 @pytest.mark.parametrize("index, value, source, outres, bitrate", mixstream_stuple_list)
 def test_mixstream(index, value, source, outres, bitrate):
@@ -193,7 +193,7 @@ def test_mixstream(index, value, source, outres, bitrate):
             try:
                 check_code_status = check_rtmp(out_stream)
                 if check_code_status == 0:
-                    print("stream existx ")
+                    print("check_code_status == 0")
                 else:
                     print("check_code_status == 1")
             except Exception as error:
@@ -209,8 +209,6 @@ def test_mixstream(index, value, source, outres, bitrate):
         if work_num == 5:
             print("working")
             break
-        
-    
     task_clear = exec_cmdline(node_ip, 'killall -15 ffmpeg')
     # while True:
     time.sleep(5)
@@ -223,44 +221,3 @@ def test_mixstream(index, value, source, outres, bitrate):
             task_clear = exec_cmdline(node_ip, 'killall -9 ffmpeg')
             print("warning: task killall -9")
     time.sleep(5)
-
-# print("begin check")
-# # loop_stream = []
-# while True:
-#     for node_ip in ip_list:
-#         failed = 0
-#         reset_task = 0
-#         for stream_index in range(8):
-#             out_stream = input_stream + '_' +  node_ip.split('.')[-1] + '_' + str(stream_index)
-#             try:
-#                 check_code_status =  check_rtmp(out_stream)
-#                 # print(check_code_status)
-#                 if check_code_status == 1:
-#                     # no video
-#                     ps_cmd = "ps aux | grep {} | grep -v grep | awk '{{print $1}}'".format(out_stream)
-#                     stream_pid = exec_cmdline(node_ip ,ps_cmd)
-#                     kill_cmd = 'kill -9 {}'.format(stream_pid[0])
-#                     kill  = exec_cmdline(node_ip ,kill_cmd)
-#                     transcode_cmd = "nohup ffmpeg -c:v v205h264 -i {} -c:v v205h264 -b:v 2000k -c:a copy -analyzeduration 50000000 -r 30 -outw 1920 -outh 1080 -max_muxing_queue_size 512 -f flv {} >/dev/null 2>/dev/null &".format(input_stream, out_stream)
-#                     # transcode_cmd = "nohup stream_mixer -i {} -c:v v205h264 -b:v 2000k -c:a copy  -r 30 -outw 1920 -outh 1080  -o {} -port 5188{} -in_plugin mp -out_plugin mp >/dev/null 2>/dev/null &".format(input_stream, out_stream, str(stream_index))
-#                     cc = exec_cmdline(node_ip ,transcode_cmd)
-#                     reset_task = reset_task + 1
-#                     print("info: resend task {}".format(out_stream))
-#                 else:
-#                     pass
-#             except Exception as error:
-#                 print("info: stream {} timeout".format(out_stream))
-#                 # print(error)
-#                 failed = failed + 1
-            
-#                 # loop_stream.append(out_stream)
-            
-#         if failed > 4 and failed < 8:
-#             print("warning task_num {}".format(failed))
-#         elif failed == 8:
-#             print("error node {}".format(node_ip))
-#             break
-#         if reset_task == 0:
-#             print("info: node {} pass".format(node_ip))
-#         elif reset_task > 0:
-#             print("info: node {} reset task {}".format(node_ip, str(reset_task)))

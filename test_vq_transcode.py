@@ -28,7 +28,7 @@ other_option = ''
 mount_ip = "172.16.15.31"
 mount_folder = "/mnt/raid1/data/video"
 
-psnr_open = 0
+psnr_open = 1
 vmaf_open = 1
 
 # -------------------------------------------------------------------------------
@@ -272,14 +272,14 @@ for test_info in test_set:
     video_vcodec = info_dict['-c:v']
     source_yuv = source_video.split('.')[0] + '.yuv'
     
-    # if source_video.endswith('.yuv'):
-    #     frames_cmdline = 'ffprobe -video_size {} -v error -count_frames -select_streams v:0  -show_entries stream=nb_read_frames -of default=nokey=1:noprint_wrappers=1 {}'.format(video_res, source_video)
-    # else: 
-    #     frames_cmdline = 'ffprobe -v error -count_frames -select_streams v:0  -show_entries stream=nb_read_frames -of default=nokey=1:noprint_wrappers=1 {}'.format(source_video)
-    # print(frames_cmdline)
-    # video_frames = run(frames_cmdline)
-    # print(video_frames)
-    video_frames = 5000
+    if source_video.endswith('.yuv'):
+        frames_cmdline = 'ffprobe -video_size {} -v error -count_frames -select_streams v:0  -show_entries stream=nb_read_frames -of default=nokey=1:noprint_wrappers=1 {}'.format(video_res, source_video)
+    else: 
+        frames_cmdline = 'ffprobe -v error -count_frames -select_streams v:0  -show_entries stream=nb_read_frames -of default=nokey=1:noprint_wrappers=1 {}'.format(source_video)
+    print(frames_cmdline)
+    video_frames = run(frames_cmdline)
+    print(video_frames)
+    # video_frames = 5000
 
     
 
@@ -334,18 +334,18 @@ for test_info in test_set:
         node_out_video = node_test_folder  + out_video
         cmdline_use = cmdline_use.replace('out_test.264', node_out_video)
         # print(cmdline_use)
-        # v205_transcode(cmdline_use, upload_flag)
+        v205_transcode(cmdline_use, upload_flag)
         upload_flag = 0
     elif video_vcodec == 'libx264' or  video_vcodec == 'libx265':
         cmdline_use = cmdline_use.replace('out_test.264', out_video_path)
         cmdline_use = cmdline_use.replace('source_test.yuv', source_yuv_path)
         print(cmdline_use)
-        # run(cmdline_use)
+        run(cmdline_use)
     elif video_vcodec == 'h264_qsv':
         cmdline_use = cmdline_use.replace('out_test.264', out_video_path)
         cmdline_use = cmdline_use.replace('source_test.yuv', source_yuv_path)
         print(cmdline_use)
-        # run(cmdline_use)
+        run(cmdline_use)
     
     bitrate_csv_name = os.path.join(os.path.split(out_video_path)[0],'bitrate.csv') 
     if os.path.exists(bitrate_csv_name):
