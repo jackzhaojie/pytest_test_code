@@ -1,16 +1,27 @@
-#pytest test1.py -vv --html=report.html --self-contained-html
+# pytest test_main.py -vv --html=report.html --self-contained-html
+# pytest test_main.py -s -v --ip 172.16.231.31 --runflag stream_mixer
+
 
 import pytest
 from test_tmp_performance import test_node_performance
 from test_tmp_transcode import test_node_transcode
-# import test_tmp
 import paramiko
+import csv
+import os
+import time
 
 # performance class
 xx = test_node_performance()
 performance_stuple_list = []
-presets = ['veryfast', 'fast', 'medium']
-videos = ['004-bbb-1080p-h264_10000frames.mp4', '004-bbb-720p-h264_10000frames.mp4']
+
+# test
+# presets = ['veryfast', 'fast', 'medium']
+# videos = ['004-bbb-1080p-h264_10000frames.mp4', '004-bbb-720p-h264_10000frames.mp4']
+
+# debug
+presets = ['veryfast']
+videos = ['004-bbb-720p-h264_10000frames.mp4']
+
 for video in videos:
   if video == '004-bbb-1080p-h264_10000frames.mp4':
     for preset in presets:
@@ -23,7 +34,12 @@ for video in videos:
   elif video == '004-bbb-720p-h264_10000frames.mp4':
     for preset in presets:
       if preset == 'veryfast':
-        [performance_stuple_list.append((index,preset,video,'1280x720',"2000k")) for index in range(1,17)]
+
+        # test
+        # [performance_stuple_list.append((index,preset,video,'1280x720',"2000k")) for index in range(1,17)]
+
+        # debug
+        [performance_stuple_list.append((index,preset,video,'1280x720',"2000k")) for index in range(1,3)]
       elif preset == 'medium':
         [performance_stuple_list.append((index,preset,video,'1280x720',"2000k")) for index in range(1,9)]
       elif preset == 'fast':
@@ -37,10 +53,20 @@ for video in videos:
 
 # transcode class
 bb = test_node_transcode()
+
+
+# test
+# info_conf = {
+#             "-preset":'medium, veryfast, fast',
+#             "-rc-lookahead": '40, 20', 
+#             "-bf": '0,3', 
+#             }
+
+# debug
 info_conf = {
-            "-preset":'medium, veryfast, fast',
-            "-rc-lookahead": '40, 20', 
-            "-bf": '0,3', 
+            "-preset":'medium, veryfast',
+            "-rc-lookahead": '40', 
+            "-bf": '0', 
             }
 
 def dict_recursive(info_dic):
@@ -93,7 +119,8 @@ def option_cmdline(optx, leng, options, cmdline, cmdline_list):
 
 m = dict_recursive(info_conf)
 transcode_stuple_list = []
-videos = ["004-bbb-1080p-h264_10000frames.mp4","004-bbb-720p-h264_10000frames.mp4","004-bbb-540p-h264_10000frames.mp4","004-bbb-480p-h264_10000frames.mp4","004-bbb-360p-h264_10000frames.mp4", "004-bbb-1080p-h264_10000frames.mp4:720p"]
+# videos = ["004-bbb-1080p-h264_10000frames.mp4","004-bbb-720p-h264_10000frames.mp4","004-bbb-540p-h264_10000frames.mp4","004-bbb-480p-h264_10000frames.mp4","004-bbb-360p-h264_10000frames.mp4", "004-bbb-1080p-h264_10000frames.mp4:720p"]
+videos = ["004-bbb-720p-h264_10000frames.mp4"]
 for video in videos:
     if video == '004-bbb-1080p-h264_10000frames.mp4':
         [transcode_stuple_list.append((index[0],index[1],video,'1920x1080',"3000k")) for index in m]
@@ -122,9 +149,26 @@ class TestClass(object):
     #     assert 'x' in x
     
     @pytest.mark.parametrize("index, preset, source_video, source_res, bitrate", performance_stuple_list)
-    def test_node_get_performance(self, index, preset, source_video, source_res, bitrate):
-        xx.test_performance(index, preset, source_video, source_res, bitrate)
+    def test_node_get_performance(self, index, preset, source_video, source_res, bitrate, ip, runflag):
+        performance_info_data = xx.test_performance(index, preset, source_video, source_res, bitrate, ip, runflag)
+        if os.path.exists("test_node_get_performance_data.csv"):
+            os.remove("test_node_get_performance_data.csv")
+        time.sleep(1)
+        with open('test_node_get_performance_data.csv','a') as csvfile:
+            csv_writer=csv.writer(csvfile,dialect='excel')
+            csv_writer.writerow(["option_list","avg_time","avg_fps","total_fps"])
+            for i in performance_info_data:
+                csv_writer.writerow(i)
 
     @pytest.mark.parametrize("index, value, source_video, source_res, bitrate", transcode_stuple_list)
-    def test_node_get_transcode(self, index, value, source_video, source_res, bitrate):
-        bb.test_transcode(index, value, source_video, source_res, bitrate)
+    def test_node_get_transcode(self, index, value, source_video, source_res, bitrate, ip, runflag):
+    
+        transcode_info_data = bb.test_transcode(index, value, source_video, source_res, bitrate, ip, runflag)
+        if os.path.exists("test_node_get_transcode_data.csv"):
+            os.remove("test_node_get_transcode_data.csv")
+        time.sleep(1)
+        with open('test_node_get_transcode_data.csv','a') as csvfile:
+            csv_writer=csv.writer(csvfile,dialect='excel')
+            csv_writer.writerow(["option_list","task_num","check_num","error message"])
+            for i in transcode_info_data:
+                csv_writer.writerow(i)

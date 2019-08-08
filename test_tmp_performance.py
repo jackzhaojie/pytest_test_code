@@ -9,7 +9,8 @@ import json
 
 class test_node_performance():
     def __init__(self):
-        self.node_ip = '172.16.231.31'
+        # self.node_ip = '172.16.231.31'
+        self.performance_write_data = []
         self.ssh_port = 22
         self.ssh_name = 'root'
         self.ssh_password = "admin123"
@@ -54,35 +55,41 @@ class test_node_performance():
         return default
 
     # @pytest.mark.parametrize("index, value", self.stuple_list)
-    def test_performance(self, index, preset, source_video, source_res, bitrate):
+    def test_performance(self, index, preset, source_video, source_res, bitrate, ip, runflag):
+    
         print('')
-        # build 8
-        # basic_cmd = "cd /tmp/;time ffmpeg -y -c:v v205h264 -i /tmp/{}  -c:v v205h264 -an -preset {} -bf 3 -vsync 0  -b:v {} -r 30 -g 90 -ratetol 1 -s {} /tmp/output01.264".format(source_video, preset, bitrate,source_res)
+        # print(ip)
+        self.node_ip = ip
 
-        # build 4 
-        source_res_w = source_res.split('x')[0]
-        source_res_h = source_res.split('x')[1]
-        basic_cmd = "cd /tmp/;time ffmpeg -y -c:v v205h264 -i /tmp/{}  -c:v v205h264 -an -preset {} -bf 3 -vsync 0  -b:v {} -r 30 -g 90 -ratetol 1 -outw {} -outh {} /tmp/output01.264".format(source_video, preset, bitrate,source_res_w, source_res_h)
+        if runflag == 'ffmpeg':
+            # ffmpeg build 8
+            # basic_cmd = "cd /tmp/;time ffmpeg -y -c:v v205h264 -i /tmp/{}  -c:v v205h264 -an -preset {} -bf 3 -vsync 0  -b:v {} -r 30 -g 90 -ratetol 1 -s {} /tmp/output01.264".format(source_video, preset, bitrate,source_res)
+
+            # ffmpeg build 4 
+            source_res_w = source_res.split('x')[0]
+            source_res_h = source_res.split('x')[1]
+            basic_cmd = "cd /tmp/;time ffmpeg -y -c:v v205h264 -i /tmp/{}  -c:v v205h264 -an -preset {} -bf 3   -b:v {} -r 30 -g 90 -ratetol 1 -outw {} -outh {} /tmp/output01.264".format(source_video, preset, bitrate,source_res_w, source_res_h)
+        elif runflag == 'stream_mixer':
+            # stream_mixer
+            source_res_w = source_res.split('x')[0]
+            source_res_h = source_res.split('x')[1]
+            basic_cmd = "cd /tmp/;time stream_mixer -port tmp_port  -i /tmp/{}  -an -c:v v205h264  -bgw {} -bgh {}  -outw {} -outh {} -preset {} -bf 3 -r 30 -g 90 -b:v {} -ratetol 1 -in_plugin mp -out_plugin mp -o /tmp/output01.264".format(source_video,source_res_w, source_res_h ,source_res_w, source_res_h, preset, bitrate)
+        else:
+            print("Error: no runflag, please input runflag")
+            exit(-1)
+
         make_dir = self.exec_cmdline(self.node_ip ,"cd /tmp/;mkdir txt")
         for task_num in range(1, index+1):
             cmd_use = basic_cmd[0:basic_cmd.rindex(' ')] + ' /tmp/out{}.mp4 2>&1 | tee txt/264_{}.txt &'.format(str(task_num),str(task_num))
+            if runflag == 'stream_mixer':
+                run_port = str(51880 + task_num)
+                cmd_use = cmd_use.replace("tmp_port", run_port)
             performance = self.exec_cmdline(self.node_ip, cmd_use)
             time.sleep(0.5)
         time.sleep(2)
-
-        # stream_mixer -port 51880  -i /tmp/{}  -an -c:v v205h264  -outw {} -outh {} -preset {} -bf 3 -r 30 -g 90 -b:v {} -ratetol 1 -in_plugin mp -out_plugin mp -o /tmp/output01.264
-
-        # basic_cmd = "cd /tmp/;time ffmpeg -y -c:v v205h264 -i /tmp/{}  -c:v v205h264 -an -preset {} -bf 3 -vsync 0  -b:v {} -r 30 -g 90 -ratetol 1 -s {} /tmp/output01.264".format(source_video, preset, bitrate,source_res)
-        # make_dir = self.exec_cmdline(self.node_ip ,"cd /tmp/;mkdir txt")
-        # for task_num in range(1, index+1):
-        #     cmd_use = basic_cmd[0:basic_cmd.rindex(' ')] + ' /tmp/out{}.mp4 2>&1 | tee txt/264_{}.txt &'.format(str(task_num),str(task_num))
-        #     performance = self.exec_cmdline(self.node_ip, cmd_use)
-        #     time.sleep(0.5)
-        # time.sleep(2)
-
         while True:
-            check_num = self.exec_cmdline(self.node_ip, 'ps aux | grep ffmpeg | grep -v grep | wc -l')
-            print('ffmpeg threads: {}'.format(check_num))
+            check_num = self.exec_cmdline(self.node_ip, 'ps aux | grep {} | grep -v grep | wc -l'.format(runflag))
+            print('{} threads: {}'.format(runflag, check_num))
             if int(check_num[0]) == 0:
                 break
             time.sleep(5)
@@ -110,4 +117,7 @@ class test_node_performance():
         print('avg_fps:{}'.format(round(avg_fps,2)))
         print('total_fps:{}'.format(round(cal_fps,2)))
         del_dir = self.exec_cmdline(self.node_ip ,"cd /tmp/;rm -fr txt/")
+        option_list = '-'.join([str(index), preset, source_video, source_res, bitrate])
+        self.performance_write_data.append([option_list, round(avg_time,2), round(avg_fps,2), round(cal_fps,2)])
         time.sleep(5)
+        return self.performance_write_data

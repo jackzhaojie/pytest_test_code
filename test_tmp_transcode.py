@@ -9,7 +9,8 @@ import time
 
 class test_node_transcode():
     def __init__(self):
-        self.node_ip = '172.16.231.31'
+        # self.node_ip = '172.16.231.31'
+        self.transcode_write_data = []
         self.ssh_port = 22
         self.ssh_name = 'root'
         self.ssh_password = "admin123"
@@ -56,14 +57,27 @@ class test_node_transcode():
         return default
 
     # @pytest.mark.parametrize("index, value", stuple_list)
-    def test_transcode(self, index, value, source_video, source_res, bitrate):
-        # build 8
-        # basic_cmd = "cd /tmp;ffmpeg -y -c:v v205h264 -i /tmp/{}  -c:v v205h264 -an -preset veryfast -bf 3  -vsync 0 -rc-lookahead 40 -b:v {} -r 30 -g 90 -ratetol 1 -s {} /tmp/output1.mp4".format(source_video, bitrate,source_res)
+    def test_transcode(self, index, value, source_video, source_res, bitrate, ip, runflag):
+    
+        # print(ip)
+        self.node_ip = ip
 
-        # build 4 
-        source_res_w = source_res.split('x')[0]
-        source_res_h = source_res.split('x')[1]
-        basic_cmd = "cd /tmp;ffmpeg -y -c:v v205h264 -i /tmp/{}  -c:v v205h264 -an -preset veryfast -bf 3  -vsync 0 -rc-lookahead 40 -b:v {} -r 30 -g 90 -ratetol 1 -outw {} -outh {} /tmp/output1.mp4".format(source_video, bitrate,source_res_w, source_res_h)
+        if runflag == 'ffmpeg':
+            # build 8
+            # basic_cmd = "cd /tmp;ffmpeg -y -c:v v205h264 -i /tmp/{}  -c:v v205h264 -an -preset veryfast -bf 3  -vsync 0 -rc-lookahead 40 -b:v {} -r 30 -g 90 -ratetol 1 -s {} /tmp/output1.mp4".format(source_video, bitrate,source_res)
+
+            # build 4 
+            source_res_w = source_res.split('x')[0]
+            source_res_h = source_res.split('x')[1]
+            basic_cmd = "cd /tmp;ffmpeg -y -c:v v205h264 -i /tmp/{}  -c:v v205h264 -an -preset veryfast -bf 3  -rc-lookahead 40 -b:v {} -r 30 -g 90 -ratetol 1 -outw {} -outh {} /tmp/output1.mp4".format(source_video, bitrate,source_res_w, source_res_h)
+        elif runflag == 'stream_mixer':
+            # stream_mixer
+            source_res_w = source_res.split('x')[0]
+            source_res_h = source_res.split('x')[1]
+            basic_cmd = "cd /tmp/;stream_mixer -port tmp_port  -i /tmp/{}  -an -c:v v205h264  -bgw {} -bgh {}  -outw {} -outh {} -preset veryfast -bf 3 -r 30 -g 90 -b:v {} -ratetol 1 -in_plugin mp -out_plugin mp -o /tmp/output01.mp4".format(source_video,source_res_w, source_res_h ,source_res_w, source_res_h, bitrate)
+        else:
+            print("Error: no runflag, please input runflag")
+            exit(-1)
 
         value_dicts = self.option_mark(value)
         basic_cmd_list = [i for i in basic_cmd.split(' ') if i != ' ']
@@ -77,12 +91,17 @@ class test_node_transcode():
         print('')
         for task_num in range(1,36):
             cmd_use = transcode_cmd[0:transcode_cmd.rindex(' ')] + ' /tmp/out{}.mp4 2>&1 | tee thread{}.log &'.format(str(task_num), str(task_num))
+            if runflag == 'stream_mixer':
+                print(cmd_use)
+                run_port = str(51880 + task_num)
+                cmd_use = cmd_use.replace("tmp_port", run_port)
+                print(cmd_use)
             transcode = self.exec_cmdline(self.node_ip, cmd_use)
             if source_res == '480x360' or source_res == '640x480':
-                time.sleep(0.5)
+                time.sleep(1)
             else:
                 time.sleep(3)
-            check_num = self.exec_cmdline(self.node_ip, 'ps aux | grep ffmpeg | grep -v grep | wc -l')
+            check_num = self.exec_cmdline(self.node_ip, 'ps aux | grep {} | grep -v grep | wc -l'.format(runflag))
             check_num = check_num[0]
             print("task_num: {}".format(task_num))
             print("check_num: {}".format(check_num))
@@ -91,22 +110,26 @@ class test_node_transcode():
                 print("task_num: {}".format(task_num))
                 print("check_num: {}".format(check_num))
                 err_info = self.exec_cmdline(self.node_ip ,"tail -n 4 /tmp/thread{}.log".format(str(task_num)))
-                print("erroe message:")
+                print("error message:")
                 for i in err_info:
                     print(i)
                 break
             time.sleep(1)
         print("**********")
 
-        task_clear = self.exec_cmdline(self.node_ip, 'killall -15 ffmpeg')
+        task_clear = self.exec_cmdline(self.node_ip, 'killall -15 {}'.format(runflag))
         # while True:
         time.sleep(5)
-        task_clear = self.exec_cmdline(self.node_ip, 'ps aux | grep ffmpeg | grep -v grep | wc -l')
+        task_clear = self.exec_cmdline(self.node_ip, 'ps aux | grep {} | grep -v grep | wc -l'.format(runflag))
         if int(task_clear[0]) > 0:
-            task_clear = self.exec_cmdline(self.node_ip, 'killall -2 ffmpeg')
+            task_clear = self.exec_cmdline(self.node_ip, 'killall -2 {}'.format(runflag))
             time.sleep(5)
-            task_clear = self.exec_cmdline(self.node_ip, 'ps aux | grep ffmpeg | grep -v grep | wc -l')
+            task_clear = self.exec_cmdline(self.node_ip, 'ps aux | grep {} | grep -v grep | wc -l'.format(runflag))
             if int(task_clear[0]) > 0:
-                task_clear = self.exec_cmdline(self.node_ip, 'killall -9 ffmpeg')
+                task_clear = self.exec_cmdline(self.node_ip, 'killall -9 {}'.format(runflag))
                 print("warning: task killall -9")
+
+        option_list = '-'.join([str(index), value, source_video, source_res, bitrate])
+        self.transcode_write_data.append([option_list, task_num, check_num, err_info])
         time.sleep(2)
+        return self.transcode_write_data
