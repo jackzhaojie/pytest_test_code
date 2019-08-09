@@ -77,7 +77,7 @@ class test_node_performance():
         else:
             print("Error: no runflag, please input runflag")
             exit(-1)
-
+        del_dir = self.exec_cmdline(self.node_ip ,"cd /tmp/;rm -fr txt/")
         make_dir = self.exec_cmdline(self.node_ip ,"cd /tmp/;mkdir txt")
         for task_num in range(1, index+1):
             cmd_use = basic_cmd[0:basic_cmd.rindex(' ')] + ' /tmp/out{}.mp4 2>&1 | tee txt/264_{}.txt &'.format(str(task_num),str(task_num))
@@ -108,7 +108,6 @@ class test_node_performance():
         time_list = [float(i.split('m')[0])*60 + float(i.split('m')[1].rstrip('s')) for i in time_get_list]
         avg_time = sum(time_list) / len(time_list)
         print('avg_time:{}'.format(round(avg_time,2)))
-        source_video = [i for i in os.listdir(os.getcwd()) if i.endswith("mp4")][0]
         frames_cmdline = 'ffprobe -v error -count_frames -select_streams v:0  -show_entries stream=nb_read_frames -of default=nokey=1:noprint_wrappers=1 {}'.format(source_video)
         video_frames = self.run(frames_cmdline)
         fpss = [round(float(float(video_frames)/(float(i.split('m')[0])*60 + float(i.split('m')[1].rstrip('s')))),2) for i in time_get_list]
@@ -116,7 +115,6 @@ class test_node_performance():
         avg_fps = cal_fps / len(fpss)
         print('avg_fps:{}'.format(round(avg_fps,2)))
         print('total_fps:{}'.format(round(cal_fps,2)))
-        del_dir = self.exec_cmdline(self.node_ip ,"cd /tmp/;rm -fr txt/")
         option_list = '-'.join([str(index), preset, source_video, source_res, bitrate])
         self.performance_write_data.append([option_list, round(avg_time,2), round(avg_fps,2), round(cal_fps,2)])
         time.sleep(5)

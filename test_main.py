@@ -1,4 +1,4 @@
-# pytest test_main.py -vv --html=report.html --self-contained-html
+# pytest test_main.py -vv --html=report.html --self-contained-html --ip 172.16.231.20 --runflag stream_mixer
 # pytest test_main.py -s -v --ip 172.16.231.31 --runflag stream_mixer
 
 
@@ -15,12 +15,12 @@ xx = test_node_performance()
 performance_stuple_list = []
 
 # test
-# presets = ['veryfast', 'fast', 'medium']
-# videos = ['004-bbb-1080p-h264_10000frames.mp4', '004-bbb-720p-h264_10000frames.mp4']
+presets = ['veryfast', 'fast', 'medium']
+videos = ['004-bbb-1080p-h264_10000frames.mp4', '004-bbb-720p-h264_10000frames.mp4']
 
 # debug
-presets = ['veryfast']
-videos = ['004-bbb-720p-h264_10000frames.mp4']
+# presets = ['veryfast']
+# videos = ['004-bbb-720p-h264_10000frames.mp4']
 
 for video in videos:
   if video == '004-bbb-1080p-h264_10000frames.mp4':
@@ -56,18 +56,18 @@ bb = test_node_transcode()
 
 
 # test
-# info_conf = {
-#             "-preset":'medium, veryfast, fast',
-#             "-rc-lookahead": '40, 20', 
-#             "-bf": '0,3', 
-#             }
+info_conf = {
+            "-preset":'medium, veryfast, fast',
+            "-rc-lookahead": '40, 20', 
+            "-bf": '0,3', 
+            }
 
 # debug
-info_conf = {
-            "-preset":'medium, veryfast',
-            "-rc-lookahead": '40', 
-            "-bf": '0', 
-            }
+# info_conf = {
+#             "-preset":'medium, veryfast',
+#             "-rc-lookahead": '40', 
+#             "-bf": '0', 
+#             }
 
 def dict_recursive(info_dic):
     optx = -1
@@ -119,8 +119,12 @@ def option_cmdline(optx, leng, options, cmdline, cmdline_list):
 
 m = dict_recursive(info_conf)
 transcode_stuple_list = []
-# videos = ["004-bbb-1080p-h264_10000frames.mp4","004-bbb-720p-h264_10000frames.mp4","004-bbb-540p-h264_10000frames.mp4","004-bbb-480p-h264_10000frames.mp4","004-bbb-360p-h264_10000frames.mp4", "004-bbb-1080p-h264_10000frames.mp4:720p"]
-videos = ["004-bbb-720p-h264_10000frames.mp4"]
+
+# test
+videos = ["004-bbb-1080p-h264_10000frames.mp4","004-bbb-720p-h264_10000frames.mp4","004-bbb-540p-h264_10000frames.mp4","004-bbb-480p-h264_10000frames.mp4","004-bbb-360p-h264_10000frames.mp4", "004-bbb-1080p-h264_10000frames.mp4:720p"]
+
+# debug
+# videos = ["004-bbb-720p-h264_10000frames.mp4"]
 for video in videos:
     if video == '004-bbb-1080p-h264_10000frames.mp4':
         [transcode_stuple_list.append((index[0],index[1],video,'1920x1080',"3000k")) for index in m]
@@ -161,8 +165,7 @@ class TestClass(object):
                 csv_writer.writerow(i)
 
     @pytest.mark.parametrize("index, value, source_video, source_res, bitrate", transcode_stuple_list)
-    def test_node_get_transcode(self, index, value, source_video, source_res, bitrate, ip, runflag):
-    
+    def test_node_get_transcode(self, index, value, source_video, source_res, bitrate, ip, runflag):   
         transcode_info_data = bb.test_transcode(index, value, source_video, source_res, bitrate, ip, runflag)
         if os.path.exists("test_node_get_transcode_data.csv"):
             os.remove("test_node_get_transcode_data.csv")
