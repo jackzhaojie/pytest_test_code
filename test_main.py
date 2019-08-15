@@ -15,7 +15,8 @@ xx = test_node_performance()
 performance_stuple_list = []
 
 # test
-presets = ['veryfast', 'fast', 'medium']
+# presets = ['veryfast', 'fast', 'medium']
+presets = ['veryfast']
 videos = ['004-bbb-1080p-h264_10000frames.mp4', '004-bbb-720p-h264_10000frames.mp4']
 
 # debug
@@ -148,10 +149,6 @@ for video in videos:
 # # test2
 
 class TestClass(object):
-    # def test_one(self):
-    #     x = 'this'
-    #     assert 'x' in x
-    
     @pytest.mark.parametrize("index, preset, source_video, source_res, bitrate", performance_stuple_list)
     def test_node_get_performance(self, index, preset, source_video, source_res, bitrate, ip, runflag):
         performance_info_data = xx.test_performance(index, preset, source_video, source_res, bitrate, ip, runflag)
@@ -165,7 +162,7 @@ class TestClass(object):
                 csv_writer.writerow(i)
 
     @pytest.mark.parametrize("index, value, source_video, source_res, bitrate", transcode_stuple_list)
-    def test_node_get_transcode(self, index, value, source_video, source_res, bitrate, ip, runflag):   
+    def test_node_get_transcode(self, index, value, source_video, source_res, bitrate, ip, runflag):
         transcode_info_data = bb.test_transcode(index, value, source_video, source_res, bitrate, ip, runflag)
         if os.path.exists("test_node_get_transcode_data.csv"):
             os.remove("test_node_get_transcode_data.csv")

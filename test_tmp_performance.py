@@ -22,9 +22,23 @@ class test_node_performance():
         return text
 
     def get_connect(self, ssh_server):
-        client = paramiko.SSHClient()
-        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        client.connect(hostname=ssh_server, port=self.ssh_port, username=self.ssh_name, password=self.ssh_password)
+        for i in range(1,10):
+            ssh_flag = 1
+            try:
+                client = paramiko.SSHClient()
+                client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                # client.connect(hostname=ssh_server, port=self.ssh_port, username=self.ssh_name, password=self.ssh_password,allow_agent=False, look_for_keys=False)
+                client.connect(hostname=ssh_server, port=self.ssh_port, username=self.ssh_name, password=self.ssh_password)
+            except Exception as e:
+                print(e)
+                ssh_flag = 0
+                print("try reconnect {}".format(str(i)))
+                time.sleep(10)
+                client.close()
+            if ssh_flag == 1:
+                print("connect success")
+                break
+
         return client
 
     def exec_cmdline(self, ssh_server ,cmdline):
@@ -54,6 +68,18 @@ class test_node_performance():
                         return ret
         return default
 
+    def kill_task(self, runflag):
+        task_clear = self.exec_cmdline(self.node_ip, 'killall -15 {}'.format(runflag))
+        time.sleep(2)
+        task_clear = self.exec_cmdline(self.node_ip, 'ps aux | grep {} | grep -v grep | wc -l'.format(runflag))
+        if int(task_clear[0]) > 0:
+            task_clear = self.exec_cmdline(self.node_ip, 'killall -2 {}'.format(runflag))
+            time.sleep(5)
+            task_clear = self.exec_cmdline(self.node_ip, 'ps aux | grep {} | grep -v grep | wc -l'.format(runflag))
+            if int(task_clear[0]) > 0:
+                task_clear = self.exec_cmdline(self.node_ip, 'killall -9 {}'.format(runflag))
+                print("warning: task killall -9")
+
     # @pytest.mark.parametrize("index, value", self.stuple_list)
     def test_performance(self, index, preset, source_video, source_res, bitrate, ip, runflag):
     
@@ -77,6 +103,9 @@ class test_node_performance():
         else:
             print("Error: no runflag, please input runflag")
             exit(-1)
+        
+        self.kill_task(runflag)
+        time.sleep(2)
         del_dir = self.exec_cmdline(self.node_ip ,"cd /tmp/;rm -fr txt/")
         make_dir = self.exec_cmdline(self.node_ip ,"cd /tmp/;mkdir txt")
         for task_num in range(1, index+1):
@@ -85,14 +114,14 @@ class test_node_performance():
                 run_port = str(51880 + task_num)
                 cmd_use = cmd_use.replace("tmp_port", run_port)
             performance = self.exec_cmdline(self.node_ip, cmd_use)
-            time.sleep(0.5)
+            time.sleep(1)
         time.sleep(2)
         while True:
             check_num = self.exec_cmdline(self.node_ip, 'ps aux | grep {} | grep -v grep | wc -l'.format(runflag))
             print('{} threads: {}'.format(runflag, check_num))
             if int(check_num[0]) == 0:
                 break
-            time.sleep(5)
+            time.sleep(30)
         time.sleep(1)
         time_get = '_'
         for task_num in range(1, index+1):
@@ -117,5 +146,8 @@ class test_node_performance():
         print('total_fps:{}'.format(round(cal_fps,2)))
         option_list = '-'.join([str(index), preset, source_video, source_res, bitrate])
         self.performance_write_data.append([option_list, round(avg_time,2), round(avg_fps,2), round(cal_fps,2)])
+        
+        self.kill_task(runflag)
+        # while True:
         time.sleep(5)
         return self.performance_write_data

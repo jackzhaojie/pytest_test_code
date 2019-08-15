@@ -24,9 +24,22 @@ class test_node_transcode():
         return dict_mark_info
 
     def get_connect(self, ssh_server):
-        client = paramiko.SSHClient()
-        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        client.connect(hostname=ssh_server, port=self.ssh_port, username=self.ssh_name, password=self.ssh_password)
+        for i in range(1,10):
+            ssh_flag = 1
+            try:
+                client = paramiko.SSHClient()
+                client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                # client.connect(hostname=ssh_server, port=self.ssh_port, username=self.ssh_name, password=self.ssh_password,allow_agent=False, look_for_keys=False)
+                client.connect(hostname=ssh_server, port=self.ssh_port, username=self.ssh_name, password=self.ssh_password)
+            except Exception as e:
+                print(e)
+                ssh_flag = 0
+                print("try reconnect {}".format(str(i)))
+                time.sleep(10)
+                client.close()
+            if ssh_flag == 1:
+                print("connect success")
+                break
         return client
 
     def exec_cmdline(self, ssh_server ,cmdline):
@@ -56,12 +69,22 @@ class test_node_transcode():
                         return ret
         return default
 
+    def kill_task(self, runflag):
+        task_clear = self.exec_cmdline(self.node_ip, 'killall -15 {}'.format(runflag))
+        time.sleep(2)
+        task_clear = self.exec_cmdline(self.node_ip, 'ps aux | grep {} | grep -v grep | wc -l'.format(runflag))
+        if int(task_clear[0]) > 0:
+            task_clear = self.exec_cmdline(self.node_ip, 'killall -2 {}'.format(runflag))
+            time.sleep(5)
+            task_clear = self.exec_cmdline(self.node_ip, 'ps aux | grep {} | grep -v grep | wc -l'.format(runflag))
+            if int(task_clear[0]) > 0:
+                task_clear = self.exec_cmdline(self.node_ip, 'killall -9 {}'.format(runflag))
+                print("warning: task killall -9")
+
     # @pytest.mark.parametrize("index, value", stuple_list)
     def test_transcode(self, index, value, source_video, source_res, bitrate, ip, runflag):
-    
         # print(ip)
         self.node_ip = ip
-
         if runflag == 'ffmpeg':
             # build 8
             # basic_cmd = "cd /tmp;ffmpeg -y -c:v v205h264 -i /tmp/{}  -c:v v205h264 -an -preset veryfast -bf 3  -vsync 0 -rc-lookahead 40 -b:v {} -r 30 -g 90 -ratetol 1 -s {} /tmp/output1.mp4".format(source_video, bitrate,source_res)
@@ -79,6 +102,9 @@ class test_node_transcode():
             print("Error: no runflag, please input runflag")
             exit(-1)
 
+        self.kill_task(runflag)
+        time.sleep(2)
+
         value_dicts = self.option_mark(value)
         basic_cmd_list = [i for i in basic_cmd.split(' ') if i != ' ']
         for dict_key, dict_value in value_dicts.items():
@@ -92,17 +118,21 @@ class test_node_transcode():
         for task_num in range(1,36):
             cmd_use = transcode_cmd[0:transcode_cmd.rindex(' ')] + ' /tmp/out{}.mp4 2>&1 | tee thread{}.log &'.format(str(task_num), str(task_num))
             if runflag == 'stream_mixer':
-                print(cmd_use)
+                # print(cmd_use)
                 run_port = str(51880 + task_num)
                 cmd_use = cmd_use.replace("tmp_port", run_port)
-                print(cmd_use)
+                # print(cmd_use)
             transcode = self.exec_cmdline(self.node_ip, cmd_use)
-            if source_res == '480x360' or source_res == '640x480':
-                time.sleep(1)
-            else:
-                time.sleep(3)
+            # if source_res == '480x360' or source_res == '640x480':
+            #     time.sleep(0.5)
+            # else:
+            time.sleep(0.5)
             check_num = self.exec_cmdline(self.node_ip, 'ps aux | grep {} | grep -v grep | wc -l'.format(runflag))
-            check_num = check_num[0]
+            if isinstance(check_num, list):
+                check_num = check_num[0]
+            else:
+                print("warning: check num is none, set check num 0 and fail this task")
+                check_num = 0
             print("task_num: {}".format(task_num))
             print("check_num: {}".format(check_num))
             if task_num != int(check_num):
@@ -114,22 +144,14 @@ class test_node_transcode():
                 for i in err_info:
                     print(i)
                 break
-            time.sleep(1)
+            # time.sleep(1)
         print("**********")
 
-        task_clear = self.exec_cmdline(self.node_ip, 'killall -15 {}'.format(runflag))
+        self.kill_task(runflag)
         # while True:
         time.sleep(5)
-        task_clear = self.exec_cmdline(self.node_ip, 'ps aux | grep {} | grep -v grep | wc -l'.format(runflag))
-        if int(task_clear[0]) > 0:
-            task_clear = self.exec_cmdline(self.node_ip, 'killall -2 {}'.format(runflag))
-            time.sleep(5)
-            task_clear = self.exec_cmdline(self.node_ip, 'ps aux | grep {} | grep -v grep | wc -l'.format(runflag))
-            if int(task_clear[0]) > 0:
-                task_clear = self.exec_cmdline(self.node_ip, 'killall -9 {}'.format(runflag))
-                print("warning: task killall -9")
-
         option_list = '-'.join([str(index), value, source_video, source_res, bitrate])
         self.transcode_write_data.append([option_list, task_num, check_num, err_info])
-        time.sleep(2)
         return self.transcode_write_data
+
+
